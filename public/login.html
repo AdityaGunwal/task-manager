@@ -1,0 +1,109 @@
+```html
+<!DOCTYPE html>
+<html>
+<head>
+<title>Login</title>
+<style>
+body{
+    font-family:Arial,sans-serif;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    height:100vh;
+    background:#eef2ff;
+}
+
+.container{
+    background:white;
+    padding:30px;
+    border-radius:15px;
+    box-shadow:0 4px 12px rgba(0,0,0,.15);
+    width:300px;
+    text-align:center;
+}
+
+input{
+    width:100%;
+    padding:10px;
+    margin-top:10px;
+    border:1px solid #ccc;
+    border-radius:8px;
+    box-sizing:border-box;
+}
+
+button{
+    width:100%;
+    margin-top:15px;
+    padding:10px;
+    border:none;
+    border-radius:8px;
+    background:#2563eb;
+    color:white;
+    font-weight:bold;
+    cursor:pointer;
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+
+<h1>Login</h1>
+
+<input
+id="username"
+placeholder="Username">
+
+<input
+id="password"
+type="password"
+placeholder="Password">
+
+<button onclick="login()">
+Login
+</button>
+
+</div>
+
+<script>
+
+async function login(){
+
+    const response =
+    await fetch("/api/login",{
+
+        method:"POST",
+
+        headers:{
+            "Content-Type":"application/json"
+        },
+
+        body:JSON.stringify({
+
+            username:
+            document.getElementById("username").value,
+
+            password:
+            document.getElementById("password").value
+
+        })
+
+    });
+
+    const data =
+    await response.json();
+
+    localStorage.setItem(
+        "token",
+        data.token
+    );
+
+    location.href="/";
+
+}
+
+</script>
+
+</body>
+</html>
+```

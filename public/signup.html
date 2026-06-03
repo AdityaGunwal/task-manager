@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <h1>Signup</h1>
+
+<input id="username">
+
+<input
+id="password"
+type="password">
+
+<button onclick="signup()">
+Signup
+</button>
+
+<script>
+
+async function signup(){
+
+await fetch("/api/signup",{
+
+method:"POST",
+
+headers:{
+"Content-Type":"application/json"
+},
+
+body:JSON.stringify({
+
+username:
+document.getElementById("username").value,
+
+password:
+document.getElementById("password").value
+
+})
+
+});
+
+location.href="/login.html";
+
+}
+
+</script>
+
+</body>
+</html>

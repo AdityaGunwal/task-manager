@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Colorful Task Dashboard</title>
+<style>
+*{box-sizing:border-box}
+body,input,select,textarea,button,table,th,td{font-family:Arial,sans-serif !important;font-size:14px !important;}
+body{
+ font-family:'Segoe UI',Arial,sans-serif;
+ margin:20px;
+ background:linear-gradient(135deg,#eef2ff,#dbeafe,#f0fdf4);
+}
+
+h2{
+ text-align:center;
+ color:#1e3a8a;
+ margin-bottom:20px;
+}
+
+.cards{
+ display:grid;
+ grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+ gap:16px;
+ margin-bottom:20px;
+}
+
+.card{
+ color:white;
+ border-radius:14px;
+ padding:18px;
+ text-align:center;
+ box-shadow:0 4px 12px rgba(0,0,0,.15);
+}
+
+.card:nth-child(1){background:linear-gradient(135deg,#2563eb,#60a5fa);}
+.card:nth-child(2){background:linear-gradient(135deg,#f59e0b,#fcd34d);}
+.card:nth-child(3){background:linear-gradient(135deg,#16a34a,#4ade80);}
+.card:nth-child(4){background:linear-gradient(135deg,#dc2626,#fb7185);}
+
+.card h3{margin:0;font-size:15px}
+.card p{font-size:32px;font-weight:bold;margin-top:8px}
+
+.toolbar{
+ text-align:center;
+ margin-bottom:15px;
+}
+
+button{
+ background:#2563eb;
+ color:white;
+ border:none;
+ border-radius:8px;
+ padding:10px 15px;
+ font-weight:bold;
+ cursor:pointer;
+}
+
+button:hover{opacity:.9}
+
+table{
+ width:100%;
+ border-collapse:collapse;
+ background:white;
+ border-radius:12px;
+ overflow:hidden;
+ box-shadow:0 4px 12px rgba(0,0,0,.12);
+}
+
+th{
+ background:linear-gradient(90deg,#1d4ed8,#3b82f6);
+ color:white;
+}
+
+th,td{
+ border:1px solid #d1d5db;
+ padding:8px;
+ text-align:center;
+ vertical-align:middle;
+}
+
+input[type=date],
+input[type=text],
+select,
+textarea{
+ font-weight:bold;
+ width:100%;
+ border:1px solid #cbd5e1;
+ border-radius:6px;
+ padding:6px;
+ text-align:center;
+}
+
+textarea{
+ font-weight:bold;
+ height:32px; min-height:32px;
+ resize:vertical;
+ white-space:pre-wrap;
+ word-break:break-word;
+ display:flex;
+ align-items:center;
+ justify-content:center;
+}
+
+.date-col{width:110px}
+.task-col{width:350px}
+
+.completed{
+ background:#4ade80 !important;
+}
+
+
+.completed{background:#4ade80 !important;}
+.inprogress{background:#facc15 !important;}
+.onhold{background:#a78bfa !important;}
+.notstarted{background:#9ca3af !important;}
+.reminderdue{background:#fb923c !important;color:black !important;font-weight:bold;}
+.overdue{background:#ef4444 !important;color:white !important;font-weight:bold;}
+
+tr:hover{
+ background:#eff6ff;
+}
+
+.footer-note{
+ margin-top:10px;
+ text-align:center;
+ color:#64748b;
+ font-size:12px;
+}
+</style>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+</head>
+<body>  
+
+
+<h2>📋 Advanced Task Tracking Dashboard</h2>
+<div style="text-align:right;margin-bottom:10px;">
+    <button onclick="logout()">🚪 Logout</button>
+</div>
+
+
+<div style="text-align:center;margin-bottom:15px;font-size:14px;font-weight:600;">
+Status Guide:
+⚪ Not Started = Task not yet begun |
+🟡 In Progress = Work underway |
+🟢 Completed = Finished |
+🟣 On Hold = Temporarily paused | 🟠 Reminder Due = Follow-up required | 🔴 Overdue = Due date passed
+</div>
+
+<div class="cards">
+ <div class="card"><h3>Total Tasks</h3><p id="total">0</p></div>
+ <div class="card"><h3>Pending</h3><p id="pending">0</p></div>
+ <div class="card"><h3>Completed</h3><p id="completed">0</p></div>
+ <div class="card"><h3>Overdue</h3><p id="overdue">0</p></div>
+</div>
+
+<div class="toolbar">
+<button onclick="addRow()">➕ Add Task</button> <button onclick="exportExcel()">📤 Export Excel</button> <input type="file" id="importExcelFile" accept=".xlsx,.xls" onchange="importExcel(event)" style="display:none"><button onclick="document.getElementById('importExcelFile').click()">📥 Import Excel</button>
+</div>
+<div style="text-align:center;margin-bottom:15px;">
+<input
+type="text"
+id="searchBox"
+placeholder="🔍 Search tasks..."
+oninput="render()"
+style="
+width:300px;
+padding:10px;
+border-radius:8px;
+border:1px solid #cbd5e1;
+font-weight:bold;
+">
+</div>
+<table>
+<thead>
+<tr>
+<th style="width:70px">S.No.</th>
+<th class="date-col">Date Task Created</th>
+<th class="task-col">Task Description</th>
+<th class="date-col">Due Date</th>
+<th style="width:160px">Task Delegated</th>
+<th class="date-col">Reminder</th>
+<th style="width:100px">Status</th>
+<th style="width:340px">Link/File URL</th>
+<th style="width:70px">Delete</th>
+</tr>
+</thead>
+<tbody id="tbody"></tbody>
+</table>
+
+<div class="footer-note">Tasks are saved automatically in your browser.</div>
+<script>
+  if(!localStorage.getItem("token")){
+    location.href="/login.html";
+}
+let tasks = [];
+
+async function loadTasks(){
+
+    const response = await fetch("/api/tasks",{
+
+        headers:{
+            Authorization:
+            localStorage.getItem("token")
+        }
+
+    });
+
+    tasks = await response.json();
+
+    render();
+
+}
+
+function formatDDMMMYYYY(v){
+ if(!v) return '';
+ const d = new Date(v);
+ if(isNaN(d)) return v;
+ const m=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+ return String(d.getDate()).padStart(2,'0')+'-'+m[d.getMonth()]+'-'+d.getFullYear();
+}
+function parseDDMMMYYYY(v){
+ if(!v) return '';
+ const p=v.split('-');
+ if(p.length!==3) return v;
+ const months={Jan:'01',Feb:'02',Mar:'03',Apr:'04',May:'05',Jun:'06',Jul:'07',Aug:'08',Sep:'09',Oct:'10',Nov:'11',Dec:'12'};
+ return `${p[2]}-${months[p[1]]||'01'}-${String(p[0]).padStart(2,'0')}`;
+}
+
+
+function updateCards(){
+ const total = tasks.length;
+ const completed = tasks.filter(t=>t.status==='Completed').length;
+ const pending = tasks.filter(t=>t.status!=='Completed').length;
+ const today = new Date().toISOString().split('T')[0];
+
+ const overdue = tasks.filter(t =>
+   t.status!=='Completed' && t.due && t.due < today
+ ).length;
+
+ document.getElementById('total').innerText=total;
+ document.getElementById('pending').innerText=pending;
+ document.getElementById('completed').innerText=completed;
+ document.getElementById('overdue').innerText=overdue;
+}
+
+
+function autoGrow(el){
+  el.style.height='32px';
+  el.style.height=Math.max(32, el.scrollHeight) + 'px';
+}
+
+
+function exportExcel(){
+ const data = tasks.map((t,idx)=>({
+   "S.No.": idx+1,
+   "Date Task Created": formatDDMMMYYYY(t.date) || "",
+   "Task Description": t.task || "",
+   "Due Date": formatDDMMMYYYY(t.due) || "",
+   "Task Delegated": t.delegate || "",
+   "Reminder": formatDDMMMYYYY(t.remind) || "",
+   "Status": t.status || "",
+   "Link/File URL": t.link || ""
+ }));
+ const ws = XLSX.utils.json_to_sheet(data);
+ const wb = XLSX.utils.book_new();
+ XLSX.utils.book_append_sheet(wb, ws, "Tasks");
+ const today = new Date();
+const y = today.getFullYear();
+const m = String(today.getMonth()+1).padStart(2,'0');
+const d = String(today.getDate()).padStart(2,'0');
+XLSX.writeFile(wb, `Tasks_${y}-${m}-${d}.xlsx`);
+}
+
+function importExcel(event){
+ const file = event.target.files[0];
+ if(!file) return;
+
+ const reader = new FileReader();
+ reader.onload = function(e){
+   const data = new Uint8Array(e.target.result);
+   const workbook = XLSX.read(data, {type:'array'});
+   const sheet = workbook.Sheets[workbook.SheetNames[0]];
+   const rows = XLSX.utils.sheet_to_json(sheet);
+
+   tasks = rows.map(r => ({
+     date: parseDDMMMYYYY(r["Date Task Created"] || ""),
+     task: r["Task Description"] || "",
+     due: parseDDMMMYYYY(r["Due Date"] || ""),
+     delegate: r["Task Delegated"] || "",
+     remind: parseDDMMMYYYY(r["Reminder"] || ""),
+     status: r["Status"] || "Not Started",
+     link: r["Link/File URL"] || ""
+   }));
+
+  //  loadTasks();
+ };
+ reader.readAsArrayBuffer(file);
+}
+
+
+function render(){
+ const tbody=document.getElementById('tbody');
+ tbody.innerHTML='';
+
+ // Auto-sort tasks by status priority
+ const statusOrder = {
+   'In Progress': 1,
+   'Not Started': 2,
+   'On Hold': 3,
+   'Completed': 4
+ };
+
+ tasks.sort((a,b)=>(statusOrder[a.status]||99) - (statusOrder[b.status]||99));
+
+ const search = document
+ .getElementById('searchBox')
+ .value
+ .toLowerCase();
+
+ tasks.forEach((t,i)=>{
+
+ const text = (
+     t.task +
+     t.delegate +
+     t.status +
+     t.due +
+     t.remind +
+     t.link
+ ).toLowerCase();
+
+ if(!text.includes(search)) return;
+
+   const tr=document.createElement('tr');
+
+   const today = new Date().toISOString().split('T')[0];
+
+   if(t.due && t.due < today && t.status!=='Completed'){
+      tr.classList.add('overdue');
+   } else if(t.remind && t.remind <= today && t.status!=='Completed'){
+      tr.classList.add('reminderdue');
+   } else if(t.status==='Completed') tr.classList.add('completed');
+   else if(t.status==='In Progress') tr.classList.add('inprogress');
+   else if(t.status==='On Hold') tr.classList.add('onhold');
+   else if(t.status==='Not Started') tr.classList.add('notstarted');
+
+
+   tr.innerHTML=`
+   <td>${i+1}</td>
+   <td><input type="text" value="${formatDDMMMYYYY(t.date)||''}" onchange="update(${i},'date',parseDDMMMYYYY(this.value))" placeholder="DD-MMM-YYYY"></td>
+   <td><textarea oninput="autoGrow(this); liveUpdate(${i},'task',this.value)">${t.task||''}</textarea></td>
+   <td><input type="text" value="${formatDDMMMYYYY(t.due)||''}" onchange="update(${i},'due',parseDDMMMYYYY(this.value))" placeholder="DD-MMM-YYYY"></td>
+   <td><input type="text" value="${t.delegate||''}" onchange="update(${i},'delegate',this.value)" placeholder="Name"></td>
+   <td><input type="text" value="${formatDDMMMYYYY(t.remind)||''}" onchange="update(${i},'remind',parseDDMMMYYYY(this.value))" placeholder="DD-MMM-YYYY"></td>
+   <td>
+      <select onchange="update(${i},'status',this.value)">
+       <option ${t.status==='Not Started'?'selected':''}>Not Started</option>
+       <option ${t.status==='In Progress'?'selected':''}>In Progress</option>
+       <option ${t.status==='Completed'?'selected':''}>Completed</option>
+       <option ${t.status==='On Hold'?'selected':''}>On Hold</option>
+      </select>
+   </td>
+   <td>
+
+<div style="display:flex;gap:6px;align-items:center;">
+<input type="text" value="${t.link||''}" onchange="update(${i},'link',this.value)" placeholder="Enter file path or URL" style="flex:1;">
+</div>
+${t.link ? `<div style="margin-top:4px;"><a href="${t.link}" target="_blank">🔗 Open</a></div>` : ''}
+</td>
+   <td><button onclick="delTask(${i})">🗑</button></td>
+   `;
+   tbody.appendChild(tr);
+ });
+
+ document.querySelectorAll('textarea').forEach(autoGrow);
+ updateCards();
+ 
+}
+
+async function addRow(){
+
+await fetch("/api/tasks",{
+   method:"POST",
+
+   headers:{
+      "Content-Type":"application/json",
+      Authorization:
+      localStorage.getItem("token")
+   },
+
+   body:JSON.stringify({
+      date:'',
+      task:'',
+      due:'',
+      delegate:'',
+      remind:'',
+      status:'Not Started',
+      link:''
+   })
+});
+
+loadTasks();
+} 
+
+async function delTask(i){
+
+ await fetch("/api/tasks/"+tasks[i]._id,{
+
+    method:"DELETE",
+
+    headers:{
+        Authorization:
+        localStorage.getItem("token")
+    }
+
+ });
+
+ loadTasks();
+
+}
+
+async function liveUpdate(i,key,val){
+
+ tasks[i][key]=val;
+
+ await fetch("/api/tasks/"+tasks[i]._id,{
+
+   method:"PUT",
+
+   headers:{
+     "Content-Type":"application/json",
+
+     Authorization:
+     localStorage.getItem("token")
+   },
+
+   body:JSON.stringify(tasks[i])
+
+ });
+
+}
+
+
+
+async function update(i,key,val){
+
+ tasks[i][key]=val;
+
+ await fetch("/api/tasks/"+tasks[i]._id,{
+
+   method:"PUT",
+
+   headers:{
+     "Content-Type":"application/json",
+
+     Authorization:
+     localStorage.getItem("token")
+   },
+
+   body:JSON.stringify(tasks[i])
+
+ });
+
+}
+function logout(){
+
+    localStorage.removeItem("token");
+
+    location.href="/login.html";
+
+}
+
+loadTasks();
+</script>
+</body>
+</html>
