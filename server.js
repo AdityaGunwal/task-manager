@@ -93,7 +93,7 @@ app.delete("/api/tasks/:id",auth,async(req,res)=>{
 });
 
 
-app.post("/api/signup", auth, async (req,res)=>{
+app.post("/api/signup", async (req,res)=>{
 
     const {username,password}=req.body;
 
@@ -109,7 +109,7 @@ app.post("/api/signup", auth, async (req,res)=>{
 
 });
 
-app.post("/api/login", auth, async(req,res)=>{
+app.post("/api/login", async(req,res)=>{
 
     const {username,password}=req.body;
 

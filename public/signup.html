@@ -1,22 +1,106 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Signup</title>
+
+<style>
+body{
+    margin:0;
+    font-family:Arial,sans-serif;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    height:100vh;
+    background:#eef2ff;
+}
+
+.container{
+    background:white;
+    padding:35px;
+    border-radius:18px;
+    box-shadow:0 6px 20px rgba(0,0,0,.15);
+    width:320px;
+    text-align:center;
+}
+
+h1{
+    margin-bottom:25px;
+    color:#1e293b;
+}
+
+input{
+    width:100%;
+    padding:12px;
+    margin-top:12px;
+    border:1px solid #d1d5db;
+    border-radius:10px;
+    box-sizing:border-box;
+    font-size:15px;
+}
+
+input:focus{
+    outline:none;
+    border-color:#2563eb;
+}
+
+button{
+    width:100%;
+    margin-top:18px;
+    padding:12px;
+    border:none;
+    border-radius:10px;
+    background:#2563eb;
+    color:white;
+    font-size:16px;
+    font-weight:bold;
+    cursor:pointer;
+    transition:.2s;
+}
+
+button:hover{
+    background:#1d4ed8;
+}
+
+p{
+    margin-top:18px;
+    color:#475569;
+}
+
+a{
+    color:#60a5fa;
+    text-decoration:underline;
+}
+</style>
 </head>
 <body>
-    <h1>Signup</h1>
 
-<input id="username">
+<div class="container">
+
+<h1>Create Account</h1>
+
+<input
+id="username"
+placeholder="Username">
 
 <input
 id="password"
-type="password">
+type="password"
+placeholder="Password">
 
 <button onclick="signup()">
-Signup
+Create Account
 </button>
+
+<p>
+Already have an account?
+<a href="/login.html">
+Login
+</a>
+</p>
+
+</div>
 
 <script>
 
@@ -50,3 +134,4 @@ location.href="/login.html";
 
 </body>
 </html>
+

@@ -1,4 +1,3 @@
-```html
 <!DOCTYPE html>
 <html>
 <head>
@@ -62,6 +61,13 @@ placeholder="Password">
 <button onclick="login()">
 Login
 </button>
+<p style="margin-top:15px;">
+    Don't have an account?
+    <a href="/signup.html"
+       style="color:#60a5fa;text-decoration:underline;">
+       Sign up
+    </a>
+</p>
 
 </div>
 
@@ -93,6 +99,11 @@ async function login(){
     const data =
     await response.json();
 
+    if(data.message==="User not found"){
+        location.href="/signup.html";
+        return;
+    }
+
     localStorage.setItem(
         "token",
         data.token
@@ -101,9 +112,8 @@ async function login(){
     location.href="/";
 
 }
-
 </script>
 
 </body>
 </html>
-```
+
